@@ -1,7 +1,7 @@
 ## Currency API App
 
 - Based on Laravel 9;
-- MySQL Database;
+- MySQL 8.0 Database;
 - Using central`s bank API data.
 
 ## Central`s bank API
