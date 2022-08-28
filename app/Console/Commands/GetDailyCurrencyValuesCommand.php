@@ -40,8 +40,7 @@ class GetDailyCurrencyValuesCommand extends Command
 
         collect($array['Valute'])
             ->map(function (array $valute): void {
-                $charCode = (string) $valute['CharCode'];
-                $currencyDto = $this->makeCurrencyDto($charCode, $valute);
+                $currencyDto = $this->makeCurrencyDto($valute);
 
                 $this->checkCurrency($currencyDto);
                 $this->saveCurrencyValue($currencyDto);
@@ -52,9 +51,11 @@ class GetDailyCurrencyValuesCommand extends Command
         return 0;
     }
 
-    private function makeCurrencyDto(string $charCode, array $valute): CurrencyDto
+    private function makeCurrencyDto(array $valute): CurrencyDto
     {
+        $charCode = (string) $valute['CharCode'];
         $currencyNameEnum = CurrencyNameEnum::tryFrom($charCode);
+
         return new CurrencyDto(
             (string) $valute['NumCode'],
             $charCode,
