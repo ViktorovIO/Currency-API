@@ -29,4 +29,6 @@ class Currency extends Model
      * @var bool
      */
     public $incrementing = false;
+
+    protected $fillable = ['code', 'char_code', 'name_single', 'name_many'];
 }

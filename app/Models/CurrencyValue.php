@@ -15,4 +15,6 @@ class CurrencyValue extends Model
      * @var bool
      */
     public $incrementing = false;
+
+    protected $fillable = ['code', 'date', 'value', 'nominal'];
 }
