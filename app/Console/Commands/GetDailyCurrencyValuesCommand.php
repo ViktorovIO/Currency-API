@@ -46,8 +46,6 @@ class GetDailyCurrencyValuesCommand extends Command
                 $this->saveCurrencyValue($currencyDto);
             });
 
-        echo 'Success!';
-
         return 0;
     }
 
