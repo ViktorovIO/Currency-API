@@ -17,7 +17,7 @@ class GetDailyCurrencyValuesCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'currency:daily-values-get';
+    protected $signature = 'currency:daily-values-get {date?}';
 
     /**
      * The console command description.
@@ -33,17 +33,25 @@ class GetDailyCurrencyValuesCommand extends Command
      */
     public function handle()
     {
-        $response = Http::get(env('CURRENCY_DAILY_DUMP_LINK'));
+        $dateString = $this->argument('date');
+        if ($dateString === null) {
+            $dateString = date('Y-m-d');
+        }
+
+        $date = Carbon::createFromFormat('Y-m-d', $dateString)->format('d/m/Y');
+        $link = env('CURRENCY_DAILY_DUMP_LINK') . "?date_req={$date}";
+        $response = Http::get($link);
+
         $xml = simplexml_load_string($response);
         $json = json_encode($xml);
         $array = json_decode($json, true);
 
         collect($array['Valute'])
-            ->map(function (array $valute): void {
+            ->map(function (array $valute) use ($dateString): void {
                 $currencyDto = $this->makeCurrencyDto($valute);
 
                 $this->checkCurrency($currencyDto);
-                $this->saveCurrencyValue($currencyDto);
+                $this->saveCurrencyValue($currencyDto, $dateString);
             });
 
         return 0;
@@ -53,6 +61,7 @@ class GetDailyCurrencyValuesCommand extends Command
     {
         $charCode = (string) $valute['CharCode'];
         $currencyNameEnum = CurrencyNameEnum::tryFrom($charCode);
+        $currencyValue = str_replace(',', '.', (string) $valute['Value']);
 
         return new CurrencyDto(
             (string) $valute['NumCode'],
@@ -60,7 +69,7 @@ class GetDailyCurrencyValuesCommand extends Command
             $valute['Nominal'],
             $currencyNameEnum->getNameSingle(),
             $currencyNameEnum->getNameMany(),
-            (float) $valute['Value']
+            $currencyValue
         );
     }
 
@@ -78,18 +87,17 @@ class GetDailyCurrencyValuesCommand extends Command
         }
     }
 
-    private function saveCurrencyValue(CurrencyDto $currencyDto): void
+    private function saveCurrencyValue(CurrencyDto $currencyDto, string $dateString): void
     {
-        $today = Carbon::now()->format('Y-m-d');
         $currencyValue = CurrencyValue::query()
             ->where('code', $currencyDto->getNumCode())
-            ->where('date', $today)
+            ->where('date', $dateString)
             ->first();
 
         if ($currencyValue === null) {
             CurrencyValue::query()->create([
                 'code' => $currencyDto->getNumCode(),
-                'date' => $today,
+                'date' => $dateString,
                 'value' => $currencyDto->getValue(),
                 'nominal' => $currencyDto->getNominal(),
             ]);
