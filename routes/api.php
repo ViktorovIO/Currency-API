@@ -20,3 +20,4 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 Route::get('/currencyList', [CurrencyController::class, 'list']);
+Route::get('/currency/{code}/{date?}', [CurrencyController::class, 'getByCode']);
