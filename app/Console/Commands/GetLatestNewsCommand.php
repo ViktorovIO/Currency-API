@@ -2,10 +2,12 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Dto\NewsDto;
+use App\Models\News\Dto\NewsDto;
+use App\Models\News\Enum\NewsCodeEnum;
+use App\Models\News\Exception\NewsChannelNotFoundException;
+use App\Models\News\Parser\NewsParserFactory;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
-use PhpQuery\PhpQuery;
 
 class GetLatestNewsCommand extends Command
 {
@@ -14,7 +16,7 @@ class GetLatestNewsCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'news:get-latest-news {tag?}';
+    protected $signature = 'news:get-latest-news {newsCode=mediaMetrics} {tag?}';
 
     /**
      * The console command description.
@@ -26,48 +28,40 @@ class GetLatestNewsCommand extends Command
     /**
      * Execute the console command.
      *
-     * @return int
+     * @return NewsDto[]
+     * @throws NewsChannelNotFoundException
      */
-    public function handle()
+    public function handle(): array
     {
+        $newsCode = $this->argument('newsCode');
         $tag = $this->argument('tag');
         if ($tag === null) {
             $tag = 'Валюта';
         }
 
-        # @TODO - парсить по этой ссылке с тегом
-        $link = env('NEWS_WEEK_LINK') . "{$tag}";
+        $newsLink = $this->getNewsLinkByCode($newsCode, $tag);
 
-        $responseData = Http::get(env('NEWSNOVOSTI_LINK'))
+        $responseData = Http::get($newsLink)
             ->toPsrResponse()
             ->getBody()
             ->getContents();
 
-        $news = $this->parseNewsString($responseData);
-
-        return 0;
+        return NewsParserFactory::make($newsCode)->parse($responseData);
     }
 
-    private function parseNewsString(string $contentString): array
+    private function getNewsLinkByCode(string $newsCode, string $tag = ''): string
     {
-        $result = [];
-        $phpQuery = new PhpQuery();
-        $phpQuery->load_str($contentString);
-
-        foreach ($phpQuery->query('.feed-item') as $newsItem) {
-            $name = $link = '';
-            $newsItemString = $phpQuery->innerHTML($newsItem);
-            if (preg_match("!href=\"(.*?)\">!si", $newsItemString, $matches)) {
-                $link = $matches[1];
-            }
-
-            if (preg_match("!\">(.*?)</a>!si", $newsItemString, $matches)) {
-                $name = $matches[1];
-            }
-
-            $result[] = new NewsDto($name, $link);
+        $newsCodeEnum = NewsCodeEnum::tryFrom($newsCode);
+        switch ($newsCodeEnum->getNewsCode()) {
+            case NewsCodeEnum::NEWS_NOVOSTI->value:
+                return env('NEWSNOVOSTI_LINK');
+            case NewsCodeEnum::VESTI->value:
+                return env('VESTI_FINANCE_LINK');
+            case NewsCodeEnum::RIA->value:
+                return env('RIA_ECONOMY_LINK');
+            case NewsCodeEnum::MEDIA_METRICS->value:
+            default:
+                return env('NEWS_WEEK_LINK') . "{$tag}";
         }
-
-        return $result;
     }
 }

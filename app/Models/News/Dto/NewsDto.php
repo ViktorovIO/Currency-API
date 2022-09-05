@@ -12,13 +12,13 @@ class NewsDto
     public function __construct(
         string $name,
         string $link,
-        string $shortDescription = '',
-        string $image = ''
+        string $image = '',
+        string $shortDescription = ''
     ) {
         $this->name = $name;
         $this->link = $link;
-        $this->shortDescription = $shortDescription;
         $this->image = $image;
+        $this->shortDescription = $shortDescription;
     }
 
     public function getName(): string
@@ -31,13 +31,13 @@ class NewsDto
         return $this->link;
     }
 
-    public function getShortDescription(): string
-    {
-        return $this->shortDescription;
-    }
-
     public function getImage(): string
     {
         return $this->image;
+    }
+
+    public function getShortDescription(): string
+    {
+        return $this->shortDescription;
     }
 }
