@@ -2,7 +2,9 @@
 
 namespace App\Models\News\Exception;
 
-class NewsChannelNotFoundException
-{
+use Exception;
 
+class NewsChannelNotFoundException extends Exception
+{
+    //
 }
