@@ -3,6 +3,7 @@
 namespace App\Models\News\Parser;
 
 use App\Models\News\Dto\NewsDto;
+use PhpQuery\PhpQuery;
 
 class RiaNewsParser implements NewsParserInterface
 {
@@ -12,6 +13,28 @@ class RiaNewsParser implements NewsParserInterface
      */
     public function parse(string $contentString): array
     {
-        return [];
+        $result = [];
+        $phpQuery = new PhpQuery();
+        $phpQuery->load_str($contentString);
+
+        foreach ($phpQuery->query('.list-item__content') as $newsItem) {
+            $name = $link = $img = '';
+            $newsItemString = $phpQuery->innerHTML($newsItem);
+            if (preg_match("!href=\"(.*?)\">!si", $newsItemString, $matches)) {
+                $link = env('VESTI_FINANCE_LINK') . $matches[1];
+            }
+
+            if (preg_match("!\">(.*?)</a>!si", $newsItemString, $matches)) {
+                $name = $matches[1];
+            }
+
+            if (preg_match("!src=\"(.*?)\"!si", $newsItemString, $matches)) {
+                $img = $matches[1];
+            }
+
+            $result[] = new NewsDto($name, $link, $img);
+        }
+
+        return $result;
     }
 }
