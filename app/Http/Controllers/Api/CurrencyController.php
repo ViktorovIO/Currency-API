@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Currency;
 use App\Models\CurrencyValue;
 use Carbon\Carbon;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 
 class CurrencyController extends Controller
